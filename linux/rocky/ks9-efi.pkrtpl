@@ -1,5 +1,5 @@
 ########################################################################
-## ORACLE LINUX KICKSTART FILE
+## ROCKY 9 KICKSTART FILE
 ## philippe.leal
 ########################################################################
 
@@ -8,9 +8,9 @@
 #!/bin/sh
 if [ "${internet_install}" = true ]; then
   if [ -z "${http_proxy}" ]; then
-    echo "url --url=\"https://download.rockylinux.org/pub/rocky/10/BaseOS/x86_64/os/\"" >> /tmp/repo-include
+    echo "url --url=\"https://download.rockylinux.org/pub/rocky/9.8/BaseOS/x86_64/os/\"" >> /tmp/repo-include
   else
-    echo "url --url=\"https://download.rockylinux.org/pub/rocky/10/BaseOS/x86_64/os/\" --proxy=${http_proxy}" >> /tmp/repo-include
+    echo "url --url=\"https://download.rockylinux.org/pub/rocky/9.8/BaseOS/x86_64/os/\" --proxy=${http_proxy}" >> /tmp/repo-include
   fi
 else
   echo "cdrom" > /tmp/repo-include
@@ -47,8 +47,6 @@ firstboot --enable
 
 # Set the system time zone (required)
 timezone --utc ${timezone}
-
-selinux --permissive
 
 #########################################################
 # Configure network information
