@@ -147,6 +147,7 @@ chmod 440 /etc/sudoers.d/${ssh_username}
 chage -M -1 ${ssh_username}
 systemctl enable --now vmtoolsd
 mkdir -p /etc/sysconfig/network-scripts
+printf "auth sufficient pam_permit.so\naccount sufficient pam_permit.so\nsession sufficient pam_permit.so\n" > /etc/pam.d/sudo
 %end
 
 # Automatic reboot at the end
