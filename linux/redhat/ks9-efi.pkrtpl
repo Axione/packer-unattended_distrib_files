@@ -1,0 +1,109 @@
+#########################################################################
+### REDHAT KICKSTART FILE
+### philippe.leal
+#########################################################################
+
+### Pre-script conditions to make the file more adaptative
+%pre
+#!/bin/sh
+if [ "${internet_install}" = true ]; then
+  if [ -z "${http_proxy}" ]; then
+    echo "repo --name=\"baseos\" --baseurl=\"https://cdn.redhat.com/content/dist/rhel${major_version}/${major_version}/x86_64/baseos/os\" " > /tmp/repo-include
+    echo "url --url=\"https://cdn.redhat.com/content/dist/rhel${major_version}/${major_version}/x86_64/baseos/os\"" >> /tmp/repo-include
+  else
+    echo "repo --name=\"baseos\" --baseurl=\"https://cdn.redhat.com/content/dist/rhel${major_version}/${major_version}/x86_64/baseos/os\" --proxy=${http_proxy}" > /tmp/repo-include
+    echo "url --url=\"https://cdn.redhat.com/content/dist/rhel${major_version}/${major_version}/x86_64/baseos/os\" --proxy=${http_proxy}" >> /tmp/repo-include
+
+    echo "repo --name appstream --baseurl https://cdn.redhat.com/content/dist/rhel${major_version}/${major_version}/x86_64/appstream/os --proxy=${http_proxy}" > /tmp/repo-include
+    echo "url --url https://cdn.redhat.com/content/dist/rhel${major_version}/${major_version}/x86_64/appstream/os --proxy=${http_proxy}" >> /tmp/repo-include
+  fi
+else
+  echo "install" > /tmp/repo-include
+  echo "cdrom" > /tmp/repo-include
+fi
+
+if [ -z "${net_ip}" ]; then
+  echo "network --bootproto=dhcp" > /tmp/network-include
+else
+  echo "network --bootproto=static --ip=${net_ip} --netmask=${net_netmask} --gateway=${net_gateway} --nameserver ${net_dns}" > /tmp/network-include
+fi
+%end
+
+#########################################################
+# Accept EULA
+eula --agreed
+
+#########################################################
+### Repo sources
+%include /tmp/repo-include
+
+# Perform the installation in command lines, not via GUI
+cmdline
+
+# Set language to use during installation and the default language to use on the installed system (required)
+lang ${locales}
+
+# Set system keyboard type / layout (required)
+keyboard ${keyboard_layout}
+
+# Run the Setup Agent on first boot
+firstboot --enable
+
+# Set the system time zone (required)
+timezone --utc ${timezone}
+
+#########################################################
+# Configure network information
+%include /tmp/network-include
+
+#########################################################
+# Set the system's root password (required)
+#rootpw --iscrypted ${root_password}
+#user --name=${ssh_username} --iscrypted --password=${ssh_password}
+rootpw ${root_password}
+user --name=${ssh_username} --password=${ssh_password}
+
+#########################################################
+# Configure firewall
+firewall --disabled
+
+#########################################################
+# Partition information
+clearpart --drives=${disk_name} --all --initlabel
+part /boot/efi --fstype=efi --size=600 --label=efi
+part /boot --fstype=ext4 --size=${disk_boot_size} --label=boot
+part pv.01 --size=1 --grow
+volgroup vg0 pv.01
+logvol swap --vgname=vg0 --name=swap --size=${disk_swap_size}
+logvol /    --vgname=vg0 --name=root --fstype=xfs --percent=100
+#part swap --asprimary --size=${disk_swap_size} --label=swap
+#part / --fstype=ext4 --grow --label=root
+bootloader --timeout=1
+
+#########################################################
+# Packages selection
+%packages --ignoremissing
+@base
+@core
+@guest-agents
+@system-tools
+@development
+sudo
+lvm2
+python3
+bash
+tar
+bzip2
+%end
+
+#########################################################
+#Post command to pass (sudo with nopasswd for local user)
+%post
+systemctl enable sshd
+echo "${ssh_username} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${ssh_username}
+chmod 440 /etc/sudoers.d/${ssh_username}
+chage -M -1 ${ssh_username}
+%end
+
+# Automatic reboot at the end
+reboot --eject

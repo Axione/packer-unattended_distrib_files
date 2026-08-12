@@ -31,7 +31,7 @@ autoinstall:
         type: disk
         ptable: gpt
         path: /dev/${disk_name}
-        wipe: superblock
+        wipe: superblock-recursive
         preserve: false
         name: main_disk
         grub_device: true
@@ -44,7 +44,7 @@ autoinstall:
         preserve: false
       - device: disk-${disk_name}
         size: ${disk_boot_size}M
-        wipe: superblock
+        wipe: superblock-recursive
         flag: ''
         number: 2
         preserve: false
@@ -57,7 +57,7 @@ autoinstall:
         id: format-0
       - device: disk-${disk_name}
         size: -1
-        wipe: superblock
+        wipe: superblock-recursive
         flag: ''
         number: 3
         preserve: false
@@ -70,7 +70,6 @@ autoinstall:
         id: lvm_volgroup-0
       - name: root
         volgroup: lvm_volgroup-0
-        size: -1
         preserve: false
         type: lvm_partition
         id: lvm_partition-0
