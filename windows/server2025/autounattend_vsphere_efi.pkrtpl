@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+    <settings pass="windowsPE">
+
+        <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <SetupUILanguage>
+                <UILanguage>${windows_language}</UILanguage>
+            </SetupUILanguage>
+            <InputLocale>${windows_input_language}</InputLocale>
+            <SystemLocale>${windows_language}</SystemLocale>
+            <UILanguage>${windows_language}</UILanguage>
+            <UserLocale>${windows_language}</UserLocale>
+        </component>
+
+        <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <DiskConfiguration>
+                <Disk wcm:action="add">
+                    <CreatePartitions>
+                        <CreatePartition wcm:action="add">
+                            <Type>EFI</Type>
+                            <Size>512</Size>
+                            <Order>1</Order>
+                        </CreatePartition>
+                        <CreatePartition wcm:action="add">
+                            <Extend>false</Extend>
+                            <Type>MSR</Type>
+                            <Order>2</Order>
+                            <Size>128</Size>
+                        </CreatePartition>
+                        <CreatePartition wcm:action="add">
+                            <Order>3</Order>
+                            <Type>Primary</Type>
+                            <Extend>true</Extend>
+                        </CreatePartition>
+                    </CreatePartitions>
+                    <ModifyPartitions>
+                        <ModifyPartition wcm:action="add">
+                            <Format>FAT32</Format>
+                            <Order>1</Order>
+                            <PartitionID>1</PartitionID>
+                        </ModifyPartition>
+                        <ModifyPartition wcm:action="add">
+                            <Order>2</Order>
+                            <PartitionID>2</PartitionID>
+                        </ModifyPartition>
+                        <ModifyPartition wcm:action="add">
+                            <Format>NTFS</Format>
+                            <Label>Windows</Label>
+                            <Order>3</Order>
+                            <PartitionID>3</PartitionID>
+                        </ModifyPartition>
+                    </ModifyPartitions>
+                    <DiskID>0</DiskID>
+                    <WillWipeDisk>true</WillWipeDisk>
+                </Disk>
+            </DiskConfiguration>
+            <UserData>
+                <AcceptEula>true</AcceptEula>
+                <FullName>${winrm_username}</FullName>
+                <Organization>Administrators</Organization>
+                <ProductKey>
+                    <WillShowUI>Never</WillShowUI>
+                </ProductKey>
+            </UserData>
+            <ImageInstall>
+                <OSImage>
+                    <InstallTo>
+                        <DiskID>0</DiskID>
+                        <PartitionID>3</PartitionID>
+                    </InstallTo>
+                    <WillShowUI>OnError</WillShowUI>
+                    <InstallToAvailablePartition>false</InstallToAvailablePartition>
+                    <InstallFrom>
+                        <MetaData wcm:action="add">
+                            <Key>/IMAGE/NAME</Key>
+                            <Value>${windows_edition}</Value>
+                        </MetaData>
+                    </InstallFrom>
+                </OSImage>
+            </ImageInstall>
+        </component>
+    </settings>
+
+
+    <settings pass="specialize">
+ 				<!-- CONFIGURE TIMEZONE-->
+        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <ComputerName>*</ComputerName>
+            <TimeZone>Romance Standard Time</TimeZone>
+        </component>
+
+        <component name="Microsoft-Windows-TerminalServices-LocalSessionManager" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <fDenyTSConnections>false</fDenyTSConnections>
+        </component>
+        <component name="Networking-MPSSVC-Svc" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <FirewallGroups>
+                <FirewallGroup wcm:action="add" wcm:keyValue="RemoteDesktop">
+                    <Active>true</Active>
+                    <Group>Remote Desktop</Group>
+                    <Profile>all</Profile>
+                </FirewallGroup>
+            </FirewallGroups>
+        </component>
+
+        <component name="Microsoft-Windows-TerminalServices-RDP-WinStationExtensions" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <UserAuthentication>0</UserAuthentication>
+        </component>
+    </settings>
+
+
+
+    <settings pass="oobeSystem">
+        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <AutoLogon>
+                <Enabled>true</Enabled>
+                <Username>${winrm_username}</Username>
+                <Password>
+                    <Value>${winrm_password}</Value>
+                    <PlainText>true</PlainText>
+                </Password>
+            </AutoLogon>
+            <FirstLogonCommands>
+								<!-- VMWARE TOOLS --> 
+                <SynchronousCommand wcm:action="add">
+                   <Order>1</Order>
+                   <Description>Install VMware Tools</Description>
+                   <CommandLine>cmd.exe /c C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -File a:\vmtools.ps1</CommandLine>
+                </SynchronousCommand>
+                <!-- SET IP STATIC -->
+                <SynchronousCommand wcm:action="add">
+                    <Description>Set ip static</Description>
+                    <Order>2</Order>
+                    <CommandLine>netsh interface ipv4 set address name="Ethernet0" static ${net_ip} ${net_netmask} ${net_gateway}</CommandLine>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Description>Set primary dns</Description>
+                    <Order>3</Order>
+                    <CommandLine>netsh interface ipv4 add dnsserver name="Ethernet0" address=${net_dns} index=1</CommandLine>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Description>Set secondary dns</Description>
+                    <Order>4</Order>
+                    <CommandLine>netsh interface ipv4 add dnsserver name="Ethernet0" address=${net_dns} index=2</CommandLine>
+                </SynchronousCommand>
+								<!-- ENABLE WINRM + OPEN PORT ON FIREWALL --> 
+                <SynchronousCommand wcm:action="add">
+                    <Order>5</Order>
+                    <Description>Enable WinRM</Description>
+		    <CommandLine>cmd.exe /c (winrm quickconfig -quiet &gt; nul 2&gt;&amp;1) &amp; (winrm set winrm/config/service/auth @{Basic="true"} &gt; nul 2&gt;&amp;1) &amp; (winrm set winrm/config/service @{AllowUnencrypted="true"} &gt; nul 2&gt;&amp;1) &amp; (winrm set winrm/config/client @{TrustedHosts="*"} &gt; nul 2&gt;&amp;1) &amp; sc config WinRM start= auto &gt; nul &amp; sc start WinRM &gt; nul &amp; netsh advfirewall firewall add rule name="WinRM 5985" dir=in action=allow protocol=TCP localport=5985 &gt; nul</CommandLine>
+                </SynchronousCommand>
+	    </FirstLogonCommands>
+            <OOBE>
+                <ProtectYourPC>3</ProtectYourPC>
+                <HideEULAPage>true</HideEULAPage>
+                <HideLocalAccountScreen>true</HideLocalAccountScreen>
+                <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>
+                <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
+                <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>
+                <NetworkLocation>Home</NetworkLocation>
+            </OOBE>
+            <UserAccounts>
+                <AdministratorPassword>
+                    <Value>${winrm_password}</Value>
+                    <PlainText>true</PlainText>
+                </AdministratorPassword>
+            </UserAccounts>
+        </component>
+    </settings>
+    <settings pass="offlineServicing">
+        <component name="Microsoft-Windows-LUA-Settings" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <EnableLUA>false</EnableLUA>
+        </component>
+    </settings>
+</unattend>
