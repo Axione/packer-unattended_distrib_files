@@ -1,0 +1,158 @@
+########################################################################
+## ORACLE LINUX KICKSTART FILE
+## philippe.leal
+########################################################################
+
+### Pre-script conditions to make the file more adaptative
+%pre
+#!/bin/sh
+if [ "${internet_install}" = true ]; then
+  if [ -z "${http_proxy}" ]; then
+    echo "repo --name=\"ol10_AppStream\" --baseurl=\"https://yum.oracle.com/repo/OracleLinux/OL10/appstream/x86_64/\"" > /tmp/repo-include
+    echo "url --url=\"https://yum.oracle.com/repo/OracleLinux/OL10/baseos/latest/x86_64\"" >> /tmp/repo-include
+  else
+    echo "repo --name=\"ol10_AppStream\" --baseurl=\"https://yum.oracle.com/repo/OracleLinux/OL10/appstream/x86_64/\" --proxy=${http_proxy}" > /tmp/repo-include
+    echo "url --url=\"https://yum.oracle.com/repo/OracleLinux/OL10/baseos/latest/x86_64\" --proxy=${http_proxy}" >> /tmp/repo-include
+  fi
+else
+  echo "cdrom" > /tmp/repo-include
+  echo "repo --name=\"AppStream\" --baseurl=file:///run/install/sources/mount-0000-cdrom/AppStream" >> /tmp/repo-include
+fi
+
+
+if [ -z "${net_ip}" ]; then
+  echo "network --bootproto=dhcp" > /tmp/network-include
+else
+  echo "network --bootproto=static --ip=${net_ip} --netmask=${net_netmask} --gateway=${net_gateway} --nameserver ${net_dns}" > /tmp/network-include
+fi
+%end
+
+#########################################################
+# Accept EULA
+eula --agreed
+
+#########################################################
+### Repo sources
+%include /tmp/repo-include
+
+# Perform the installation in command lines, not via GUI
+cmdline
+
+# Set language to use during installation and the default language to use on the installed system (required)
+lang ${locales}
+
+# Set system keyboard type / layout (required)
+keyboard ${keyboard_layout}
+
+# Run the Setup Agent on first boot
+firstboot --enable
+
+# Set the system time zone (required)
+timezone --utc ${timezone}
+
+#########################################################
+# Configure network information
+%include /tmp/network-include
+
+#########################################################
+# Set the system's root password (required)
+#rootpw --iscrypted ${root_password}
+#user --name=${ssh_username} --iscrypted --password=${ssh_password}
+rootpw ${root_password}
+user --name=${ssh_username} --password=${ssh_password}
+
+#########################################################
+# Configure firewall
+firewall --disabled
+
+#########################################################
+# Partition information
+clearpart --drives=${disk_name} --all --initlabel
+#part biosboot --fstype=biosboot --size=1 --ondisk=${disk_name}
+part /boot/efi --fstype=efi --size=600 --label=efi
+part /boot --fstype=ext4 --size=${disk_boot_size} --label=boot
+part pv.01 --size=1 --grow
+volgroup vg0 pv.01
+logvol swap --vgname=vg0 --name=swap --size=${disk_swap_size}
+logvol /    --vgname=vg0 --name=root --fstype=xfs --percent=100
+#part swap --asprimary --size=${disk_swap_size} --label=swap
+#part / --fstype=ext4 --grow --label=root
+bootloader --timeout=1
+
+#########################################################
+# Packages selection
+%packages --ignoremissing --excludedocs
+@legacy-unix
+@system-tools
+open-vm-tools
+sudo
+lvm2
+python3
+bash
+tar
+bzip2
+perl
+kernel-uek
+
+##Cant remove package for a minimal installl if base / core selected
+-abrt*
+-biosdevname
+-btrfs-progs*
+-dhclient
+-dhcp*
+-iprutils
+-ivtv*
+-plymouth*
+-postfix
+-btrfs-progs*
+-ppp
+-fprintd
+-hidd
+-kernel
+# unnecessary firmware
+-aic94xx-firmware
+-atmel-firmware
+-b43-openfwwf
+-bfa-firmware
+-ipw2100-firmware
+-ipw2200-firmware
+-ivtv-firmware
+-iwl*-firmware
+-libertas*
+-ql*-firmware
+-rt61pci-firmware
+-rt73usb-firmware
+-xorg-x11-drv-ati-firmware
+-zd1211-firmware
+-cockpit
+-quota
+-alsa-*
+-fprintd-pam
+-intltool
+-microcode_ctl
+%end
+
+## 399 packages - remove the list above to reduce even more
+#%packages --ignoremissing
+#@guest-agents
+#sudo
+#lvm2
+#python3
+#%end
+
+%addon com_redhat_kdump --disable
+%end
+
+#########################################################
+#Post command to pass (sudo with nopasswd for local user)
+%post
+systemctl enable sshd
+echo "${ssh_username} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${ssh_username}
+chmod 440 /etc/sudoers.d/${ssh_username}
+chage -M -1 ${ssh_username}
+systemctl enable --now vmtoolsd
+mkdir -p /etc/sysconfig/network-scripts
+%end
+
+# Automatic reboot at the end
+reboot --eject
