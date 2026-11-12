@@ -1,5 +1,17 @@
 #Unmount preseed disk or apt manager will fail
-d-i preseed/early_command string umount /mnt/cdrom2 && echo 1 > /sys/block/sr1/device/delete
+#d-i preseed/early_command string umount /mnt/cdrom2 2>/dev/null; echo 1 > /sys/block/sr1/device/delete 2>/dev/null; true
+#d-i preseed/early_command string \
+#    for d in /sys/block/sr*; do \
+#        dev=$(basename $d); \
+#        mp=$(grep "/dev/$dev" /proc/mounts | awk '{print $2}'); \
+#        if [ -n "$mp" ] && [ "$mp" != "/cdrom" ]; then \
+#            umount $mp 2>/dev/null; \
+#            echo 1 > $d/device/delete 2>/dev/null; \
+#        fi; \
+#    done
+
+#Do not ask manual selection
+#d-i debconf/priority select critical
 
 # Locale
 d-i debian-installer/language string en
@@ -46,14 +58,24 @@ d-i partman/choose_partition select finish
 d-i partman/confirm boolean true
 d-i partman/confirm_nooverwrite boolean true
 
-# Packages
+# Apt / Sources
+d-i apt-setup/cdrom/set-first boolean false
+d-i apt-setup/cdrom/set-next boolean false
+d-i apt-setup/cdrom/set-double boolean false
+d-i apt-setup/cdrom/set-failed boolean false
 d-i apt-setup/use_mirror boolean false
+d-i apt-setup/services-select multiselect
+d-i apt-setup/security_host string
+d-i apt-setup/security_path string
+d-i apt-setup/enable-source-repositories boolean false
 
+# Packages
 d-i base-installer/install-recommends boolean false
 d-i base-installer/kernel/image string linux-image-amd64
 tasksel tasksel/first multiselect standard, ssh-server
-d-i pkgsel/include string vim sudo open-vm-tools
-d-i pkgsel/upgrade select safe-upgrade
+d-i pkgsel/include string vim sudo
+d-i pkgsel/upgrade select none
+d-i pkgsel/update-policy select none
 popularity-contest popularity-contest/participate boolean false
 
 # Boot

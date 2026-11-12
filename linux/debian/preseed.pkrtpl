@@ -27,6 +27,7 @@ d-i keymap select ${keyboard_layout}
 d-i apt-setup/cdrom/set-first boolean false
 d-i apt-setup/cdrom/set-next boolean false
 d-i apt-setup/cdrom/set-failed boolean false
+d-i apt-setup/use_mirror boolean true
 d-i mirror/country string manual
 d-i mirror/http/hostname string ftp.fr.debian.org
 d-i mirror/http/directory string /debian
@@ -59,7 +60,6 @@ d-i partman/confirm_nooverwrite boolean true
 # Packages
 d-i base-installer/install-recommends boolean false
 d-i base-installer/kernel/image string linux-image-amd64
-d-i apt-setup/use_mirror boolean true
 tasksel tasksel/first multiselect standard, ssh-server
 d-i pkgsel/include string vim sudo open-vm-tools
 d-i pkgsel/upgrade select safe-upgrade
@@ -85,8 +85,3 @@ d-i preseed/late_command string \
 
 # Don't show "Installation has been completed" message
 d-i finish-install/reboot_in_progress note
-
-# Avoid CD/DVD scan
-d-i apt-setup/cdrom/set-first boolean false
-d-i apt-setup/cdrom/set-next boolean false
-d-i apt-setup/cdrom/set-failed boolean false
